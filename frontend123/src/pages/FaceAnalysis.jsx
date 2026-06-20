@@ -411,7 +411,7 @@ export default function FaceAnalysis() {
     try {
       const token = localStorage.getItem("token"); // adjust if you store it differently
 
-      const response = await fetch(`${BACKEND_URL}/api/face-analysis/analyze`, {
+      const response = await fetch(`${BACKEND_URL}/api/face/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
