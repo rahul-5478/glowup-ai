@@ -25,7 +25,6 @@ const styles = {
     fontSize: 13,
     color: "rgba(255,255,255,0.5)",
   },
-  // Camera / Upload Section
   captureBox: {
     background: "rgba(255,255,255,0.04)",
     border: "1.5px dashed rgba(255,107,107,0.3)",
@@ -67,7 +66,6 @@ const styles = {
     fontSize: 14,
     color: "rgba(255,255,255,0.4)",
   },
-  // Buttons
   btnRow: {
     display: "flex",
     gap: 10,
@@ -112,7 +110,6 @@ const styles = {
     marginBottom: 24,
     transition: "all 0.3s",
   },
-  // Loading
   loadingCard: {
     background: "rgba(255,107,107,0.08)",
     border: "1px solid rgba(255,107,107,0.2)",
@@ -130,7 +127,6 @@ const styles = {
     margin: "0 auto 16px",
     animation: "spin 1s linear infinite",
   },
-  // Results
   scoreCard: {
     background: "linear-gradient(135deg, rgba(255,107,107,0.15), rgba(255,142,83,0.1))",
     border: "1px solid rgba(255,107,107,0.25)",
@@ -210,53 +206,34 @@ const styles = {
     padding: "3px 10px",
     borderRadius: 20,
     background:
-      severity === "Mild"
+      severity === "Low"
         ? "rgba(255,200,0,0.15)"
         : severity === "Moderate"
         ? "rgba(255,107,107,0.15)"
-        : severity === "Clear"
-        ? "rgba(0,200,100,0.15)"
+        : severity === "High"
+        ? "rgba(255,50,50,0.18)"
         : "rgba(255,255,255,0.1)",
     color:
-      severity === "Mild"
+      severity === "Low"
         ? "#FFD700"
         : severity === "Moderate"
         ? "#FF6B6B"
-        : severity === "Clear"
-        ? "#00C864"
+        : severity === "High"
+        ? "#FF3232"
         : "rgba(255,255,255,0.6)",
     border: `1px solid ${
-      severity === "Mild"
+      severity === "Low"
         ? "rgba(255,200,0,0.3)"
         : severity === "Moderate"
         ? "rgba(255,107,107,0.3)"
-        : severity === "Clear"
-        ? "rgba(0,200,100,0.3)"
+        : severity === "High"
+        ? "rgba(255,50,50,0.3)"
         : "rgba(255,255,255,0.1)"
     }`,
   }),
   issueDesc: {
     fontSize: 13,
     color: "rgba(255,255,255,0.6)",
-    lineHeight: 1.6,
-  },
-  remedyStep: {
-    display: "flex",
-    gap: 12,
-    marginBottom: 10,
-    padding: 12,
-    background: "rgba(255,255,255,0.03)",
-    borderRadius: 10,
-    alignItems: "flex-start",
-  },
-  remedyIcon: {
-    fontSize: 20,
-    flexShrink: 0,
-    marginTop: 1,
-  },
-  remedyText: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.7)",
     lineHeight: 1.6,
   },
   productCard: {
@@ -321,9 +298,7 @@ const styles = {
   },
 };
 
-// ─── BACKEND URL — apna set karo ─────────────────────────────────────────────
-// Production mein yahan tera Render backend URL hoga:
-// const BACKEND_URL = "https://glowup-backend.onrender.com";
+// ─── BACKEND URL ──────────────────────────────────────────────────────────────
 const BACKEND_URL =
   process.env.REACT_APP_BACKEND_URL ||
   "http://localhost:5000";
@@ -337,13 +312,12 @@ export default function FaceAnalysis() {
   const [activeTab, setActiveTab] = useState("problems");
   const [error, setError] = useState("");
   const [stream, setStream] = useState(null);
-  const [facingMode, setFacingMode] = useState("user"); // front cam default
+  const [facingMode, setFacingMode] = useState("user");
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Cleanup camera on unmount
   useEffect(() => {
     return () => stopCamera();
   }, []);
@@ -356,7 +330,6 @@ export default function FaceAnalysis() {
     if (videoRef.current) videoRef.current.srcObject = null;
   };
 
-  // ── Open Camera ──────────────────────────────────────────────────────────
   const openCamera = async () => {
     try {
       setError("");
@@ -394,7 +367,6 @@ export default function FaceAnalysis() {
     } catch {}
   };
 
-  // ── Capture from Camera ──────────────────────────────────────────────────
   const capturePhoto = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -414,7 +386,6 @@ export default function FaceAnalysis() {
     setMode("preview");
   }, [stream]);
 
-  // ── Upload from Gallery ──────────────────────────────────────────────────
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -438,33 +409,27 @@ export default function FaceAnalysis() {
     setError("");
 
     try {
-     
-const response = await fetch(
-  `${BACKEND_URL}/api/face-analysis/analyze`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      image: imageBase64,
-    }),
-  }
-);
+      const token = localStorage.getItem("token"); // adjust if you store it differently
 
-const data = await response.json();
+      const response = await fetch(`${BACKEND_URL}/api/face-analysis/analyze`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          imageBase64, // ⚠️ backend route reads req.body.imageBase64, not "image"
+        }),
+      });
 
-if (!response.ok) {
-  throw new Error(data.message || "Analysis failed");
-}
+      const data = await response.json();
 
-const parsed = data.analysis;
+      if (!response.ok) {
+        throw new Error(data.error || data.detail || "Analysis failed");
+      }
 
-setResult(parsed);
-setActiveTab("problems");
-setMode("result");
-
-      setResult(parsed);
+      // ⚠️ backend sends { success: true, result: {...} } — not data.analysis
+      setResult(data.result);
       setActiveTab("problems");
       setMode("result");
     } catch (err) {
@@ -483,7 +448,6 @@ setMode("result");
     stopCamera();
   };
 
-  // ── Face Shape Icon ──────────────────────────────────────────────────────
   const faceShapeIcon = {
     oval: "🥚",
     round: "🔵",
@@ -493,10 +457,8 @@ setMode("result");
     diamond: "💎",
   };
 
-  // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
     <div style={styles.container}>
-      {/* Spinner CSS */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
@@ -505,20 +467,15 @@ setMode("result");
         .glow-btn:hover { opacity: 0.85; }
       `}</style>
 
-      {/* Header */}
       <div style={styles.header}>
         <div style={styles.title}>✨ AI Face Analysis</div>
         <div style={styles.subtitle}>Camera se ya gallery se photo lo — AI analyze karega</div>
       </div>
 
-      {/* ── IDLE STATE ── */}
       {mode === "idle" && (
         <>
           <div style={styles.captureBox}>
-            <div
-              style={styles.placeholderBox}
-              onClick={() => fileInputRef.current?.click()}
-            >
+            <div style={styles.placeholderBox} onClick={() => fileInputRef.current?.click()}>
               <div style={styles.placeholderIcon}>📸</div>
               <div style={styles.placeholderText}>Tap to upload a photo</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
@@ -542,17 +499,10 @@ setMode("result");
         </>
       )}
 
-      {/* ── CAMERA STATE ── */}
       {mode === "camera" && (
         <>
           <div style={styles.captureBox}>
-            <video
-              ref={videoRef}
-              style={styles.videoEl}
-              autoPlay
-              playsInline
-              muted
-            />
+            <video ref={videoRef} style={styles.videoEl} autoPlay playsInline muted />
             <canvas ref={canvasRef} style={{ display: "none" }} />
           </div>
           <div style={styles.btnRow}>
@@ -569,17 +519,12 @@ setMode("result");
         </>
       )}
 
-      {/* ── PREVIEW STATE ── */}
       {mode === "preview" && (
         <>
           <div style={styles.captureBox}>
             <img src={previewUrl} alt="preview" style={styles.previewImg} />
           </div>
-          <button
-            style={styles.analyzeBtn}
-            onClick={analyzeFace}
-            className="analyze-btn"
-          >
+          <button style={styles.analyzeBtn} onClick={analyzeFace} className="analyze-btn">
             🔍 Analyze My Face
           </button>
           <div style={styles.btnRow}>
@@ -597,7 +542,6 @@ setMode("result");
         </>
       )}
 
-      {/* ── LOADING STATE ── */}
       {mode === "loading" && (
         <div style={styles.loadingCard}>
           <div style={styles.loadingSpinner} />
@@ -611,7 +555,6 @@ setMode("result");
         </div>
       )}
 
-      {/* ── ERROR STATE ── */}
       {mode === "error" && (
         <>
           <div style={styles.errorBox}>❌ {error}</div>
@@ -626,7 +569,6 @@ setMode("result");
         </>
       )}
 
-      {/* ── RESULT STATE ── */}
       {mode === "result" && result && (
         <>
           {/* Score Card */}
@@ -636,11 +578,10 @@ setMode("result");
               <div style={styles.scoreLabel}>score</div>
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>
-              Skin Grade:{" "}
-              <span style={{ color: "#FF6B6B" }}>{result.skinGrade}</span>
+              Skin Grade: <span style={{ color: "#FF6B6B" }}>{result.skinGrade}</span>
             </div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
-              {result.overallNote}
+              {result.skinToneHex ? `Skin Tone: ${result.skinTone}` : ""}
             </div>
           </div>
 
@@ -654,7 +595,7 @@ setMode("result");
                 {result.faceShape} Face Shape
               </div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
-                {result.faceShapeDesc}
+                {result.faceShapeDetails}
               </div>
             </div>
           </div>
@@ -663,15 +604,11 @@ setMode("result");
           <div style={styles.tabRow}>
             {[
               { key: "problems", label: "🔍 Skin Issues" },
-              { key: "remedies", label: "🌿 Remedies" },
+              { key: "hairstyles", label: "💇 Hairstyles" },
               { key: "routine", label: "📅 Routine" },
               { key: "products", label: "🛍️ Products" },
             ].map((t) => (
-              <button
-                key={t.key}
-                style={styles.tab(activeTab === t.key)}
-                onClick={() => setActiveTab(t.key)}
-              >
+              <button key={t.key} style={styles.tab(activeTab === t.key)} onClick={() => setActiveTab(t.key)}>
                 {t.label}
               </button>
             ))}
@@ -679,117 +616,107 @@ setMode("result");
 
           {/* Tab: Problems */}
           {activeTab === "problems" &&
-            result.problems?.map((p, i) => (
+            result.detectedProblems?.map((p, i) => (
               <div key={i} style={styles.resultCard}>
                 <div style={styles.issueHeader}>
-                  <div style={styles.issueName}>
-                    <span>{p.icon}</span> {p.name}
-                  </div>
+                  <div style={styles.issueName}>{p.name}</div>
                   <span style={styles.badge(p.severity)}>{p.severity}</span>
                 </div>
                 <div style={styles.issueDesc}>{p.description}</div>
+                {p.cause && (
+                  <div style={{ ...styles.issueDesc, marginTop: 6, opacity: 0.7 }}>
+                    Cause: {p.cause}
+                  </div>
+                )}
               </div>
             ))}
 
-          {/* Tab: Remedies */}
-          {activeTab === "remedies" &&
-            result.remedies?.map((r, i) => (
+          {/* Tab: Hairstyles */}
+          {activeTab === "hairstyles" &&
+            result.topHairstyles?.map((h, i) => (
               <div key={i} style={styles.resultCard}>
-                <div
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    marginBottom: 10,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <span>{r.icon}</span> {r.title}
+                {h.imageUrl && (
+                  <img
+                    src={h.imageUrl}
+                    alt={h.name}
+                    style={{ width: "100%", borderRadius: 12, marginBottom: 10, maxHeight: 180, objectFit: "cover" }}
+                  />
+                )}
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>{h.name}</div>
+                <div style={styles.issueDesc}>{h.reason}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+                  Maintenance: {h.maintenance}
                 </div>
-                <div style={styles.issueDesc}>{r.steps}</div>
               </div>
             ))}
 
           {/* Tab: Routine */}
           {activeTab === "routine" && (
             <>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: "#FFD700",
-                  marginBottom: 10,
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
-                }}
-              >
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#FFD700", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
                 ☀️ Morning Routine
               </div>
-              {result.routine?.morning?.map((s, i) => (
+              {result.treatmentPlan?.morningRoutine?.map((s, i) => (
                 <div key={i} style={styles.routineRow}>
-                  <div style={styles.routineIcon}>{s.icon}</div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 2 }}>
-                      Step {s.step}
-                    </div>
-                    <div style={styles.routineText}>{s.text}</div>
-                  </div>
+                  <div style={styles.routineIcon}>{i + 1}</div>
+                  <div style={styles.routineText}>{s}</div>
                 </div>
               ))}
 
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: "#9B8FFF",
-                  margin: "16px 0 10px",
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
-                }}
-              >
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#9B8FFF", margin: "16px 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>
                 🌙 Night Routine
               </div>
-              {result.routine?.night?.map((s, i) => (
+              {result.treatmentPlan?.nightRoutine?.map((s, i) => (
                 <div key={i} style={styles.routineRow}>
                   <div style={{ ...styles.routineIcon, background: "linear-gradient(135deg, #9B8FFF, #6B6BFF)" }}>
-                    {s.icon}
+                    {i + 1}
                   </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 2 }}>
-                      Step {s.step}
-                    </div>
-                    <div style={styles.routineText}>{s.text}</div>
-                  </div>
+                  <div style={styles.routineText}>{s}</div>
                 </div>
               ))}
+
+              {result.treatmentPlan?.doNot?.length > 0 && (
+                <>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#FF6B6B", margin: "16px 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>
+                    🚫 Avoid
+                  </div>
+                  {result.treatmentPlan.doNot.map((d, i) => (
+                    <div key={i} style={styles.routineRow}>
+                      <div style={{ ...styles.routineIcon, background: "rgba(255,80,80,0.3)" }}>✕</div>
+                      <div style={styles.routineText}>{d}</div>
+                    </div>
+                  ))}
+                </>
+              )}
             </>
           )}
 
           {/* Tab: Products */}
           {activeTab === "products" &&
-            result.products?.map((p, i) => (
+            result.skincareProducts?.map((p, i) => (
               <div key={i} style={styles.productCard}>
                 <div>
-                  <div style={styles.productName}>{p.name}</div>
+                  <div style={styles.productName}>{p.productName || p.type}</div>
                   <div style={styles.productBrand}>
-                    {p.brand} · {p.use}
+                    {p.brand} · {p.type}
                   </div>
                 </div>
                 <div style={styles.productPrice}>{p.price}</div>
               </div>
             ))}
 
-          {/* Analyze Again */}
           <div style={{ marginTop: 24 }}>
-            <button style={styles.btn("secondary")} onClick={reset} className="glow-btn" style={{ width: "100%", padding: 14 }}>
+            <button
+              style={{ ...styles.btn("secondary"), width: "100%", padding: 14 }}
+              onClick={reset}
+              className="glow-btn"
+            >
               🔄 Analyze Again
             </button>
           </div>
         </>
       )}
 
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
