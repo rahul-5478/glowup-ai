@@ -1,34 +1,45 @@
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://glowup-ai-backend-1.onrender.com/api";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://glowup-ai-3.onrender.com/api";
 
 const api = axios.create({
   baseURL: API_URL,
   timeout: 60000,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("glowup_token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   return config;
 });
 
 api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
       localStorage.removeItem("glowup_token");
       localStorage.removeItem("glowup_user");
-      window.location.reload();
     }
-    return Promise.reject(err);
+
+    return Promise.reject(error);
   }
 );
 
-// Render free tier ko jaagta rakhne ke liye — app open hote hi ping
-export const warmUpBackend = () => {
-  fetch(`${API_URL}/health`, { method: "GET" }).catch(() => {});
+export const warmUpBackend = async () => {
+  try {
+    await fetch(`${API_URL}/health`);
+  } catch (err) {
+    console.log("Backend warmup failed");
+  }
 };
 
 export const authAPI = {
@@ -39,7 +50,11 @@ export const authAPI = {
 
 export const faceAPI = {
   analyze: (imageBase64, mediaType = "image/jpeg", extra = {}) =>
-    api.post("/face/analyze", { imageBase64, mediaType, ...extra }),
+    api.post("/face/analyze", {
+      imageBase64,
+      mediaType,
+      ...extra,
+    }),
   history: () => api.get("/face/history"),
 };
 
@@ -58,7 +73,11 @@ export const skinAPI = {
 };
 
 export const chatAPI = {
-  message: (message) => api.post("/chat/message", { message }),
+  message: (message, history = []) =>
+    api.post("/chat/message", {
+      message,
+      history,
+    }),
 };
 
 export const userAPI = {

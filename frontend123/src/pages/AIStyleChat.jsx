@@ -24,7 +24,7 @@ export default function AIStyleChat() {
   useEffect(() => {
     const wakeUp = async () => {
       try {
-        await fetch("https://glowup-ai-backend-1.onrender.com/api/health");
+        await fetch(`${import.meta.env.VITE_API_URL}/health`);
         setBackendReady(true);
       } catch {
         setBackendReady(true); // allow usage even if ping fails
