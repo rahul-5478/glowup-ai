@@ -852,6 +852,8 @@ export default function SkinAnalysis() {
         @keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
+
+      
     </div>
   );
 }

@@ -324,7 +324,9 @@ const styles = {
 // ─── BACKEND URL — apna set karo ─────────────────────────────────────────────
 // Production mein yahan tera Render backend URL hoga:
 // const BACKEND_URL = "https://glowup-backend.onrender.com";
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL =
+  process.env.REACT_APP_BACKEND_URL ||
+  "http://localhost:5000";
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function FaceAnalysis() {
@@ -436,122 +438,31 @@ export default function FaceAnalysis() {
     setError("");
 
     try {
-      // Option A: Direct Anthropic API (for development)
-      // Option B: Use your Express backend (for production — API key safe rehti hai)
-      // Change the URL below to BACKEND_URL + "/api/face-analyze" for production
+     
+const response = await fetch(
+  `${BACKEND_URL}/api/face-analysis/analyze`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      image: imageBase64,
+    }),
+  }
+);
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // ⚠️ DEVELOPMENT ONLY — production mein backend route use karo
-          // "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-opus-4-5",
-          max_tokens: 2000,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image",
-                  source: {
-                    type: "base64",
-                    media_type: "image/jpeg",
-                    data: imageBase64,
-                  },
-                },
-                {
-                  type: "text",
-                  text: `You are an expert dermatologist and beauty analyst. Analyze this face image thoroughly.
-Return ONLY a valid JSON object (no markdown, no explanation) with this exact structure:
+const data = await response.json();
 
-{
-  "faceShape": "oval|round|square|heart|oblong|diamond",
-  "faceShapeDesc": "short 1-line description of the face shape",
-  "skinScore": 75,
-  "skinGrade": "B+",
-  "overallNote": "1-2 sentence overall skin summary",
-  "problems": [
-    {
-      "name": "Acne / Pimples",
-      "icon": "🔴",
-      "severity": "Mild|Moderate|Clear",
-      "description": "detailed observation"
-    },
-    {
-      "name": "Dark Circles",
-      "icon": "🌑",
-      "severity": "Mild|Moderate|Clear",
-      "description": "detailed observation"
-    },
-    {
-      "name": "Open Pores",
-      "icon": "🔬",
-      "severity": "Mild|Moderate|Clear",
-      "description": "detailed observation"
-    },
-    {
-      "name": "Uneven Skin Tone",
-      "icon": "🎭",
-      "severity": "Mild|Moderate|Clear",
-      "description": "detailed observation"
-    },
-    {
-      "name": "Oiliness",
-      "icon": "💧",
-      "severity": "Mild|Moderate|Clear",
-      "description": "detailed observation"
-    }
-  ],
-  "remedies": [
-    { "icon": "🌿", "title": "Remedy Name", "steps": "How to use it step by step. Ingredients. Time. Frequency." },
-    { "icon": "🍯", "title": "Remedy Name", "steps": "..." },
-    { "icon": "🥔", "title": "Remedy Name", "steps": "..." },
-    { "icon": "🧊", "title": "Ice Massage", "steps": "..." }
-  ],
-  "routine": {
-    "morning": [
-      { "step": "1", "icon": "☀️", "text": "Step description" },
-      { "step": "2", "icon": "💦", "text": "Step description" },
-      { "step": "3", "icon": "🌟", "text": "Step description" }
-    ],
-    "night": [
-      { "step": "1", "icon": "🌙", "text": "Step description" },
-      { "step": "2", "icon": "✨", "text": "Step description" },
-      { "step": "3", "icon": "💤", "text": "Step description" }
-    ]
-  },
-  "products": [
-    { "name": "Product Name", "brand": "Brand", "use": "For what issue", "price": "₹299" },
-    { "name": "Product Name", "brand": "Brand", "use": "For what issue", "price": "₹399" },
-    { "name": "Product Name", "brand": "Brand", "use": "For what issue", "price": "₹499" },
-    { "name": "Product Name", "brand": "Brand", "use": "For what issue", "price": "₹199" }
-  ]
+if (!response.ok) {
+  throw new Error(data.message || "Analysis failed");
 }
 
-Focus on what you can actually see. For problems you cannot detect, set severity to "Clear".
-Recommend affordable Indian skincare products (Minimalist, Dot & Key, Mamaearth, Plum, WOW, etc.).
-Give practical home remedies using easily available Indian kitchen ingredients.`,
-                },
-              ],
-            },
-          ],
-        }),
-      });
+const parsed = data.analysis;
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData?.error?.message || "API call failed");
-      }
-
-      const data = await response.json();
-      const text = data.content?.[0]?.text || "";
-      const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
+setResult(parsed);
+setActiveTab("problems");
+setMode("result");
 
       setResult(parsed);
       setActiveTab("problems");
