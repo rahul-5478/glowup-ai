@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
-const { callGroq, parseGroqJSON } = require("../config/groq");
+const { callGroq } = require("../config/groq");
 const User = require("../models/User");
 
 // ─── POST /api/chat/message ───────────────────────────────────────────────────
@@ -27,7 +27,7 @@ Reply helpfully and conversationally. Keep response under 200 words unless asked
 For product recommendations, prefer Indian brands available on Nykaa/Amazon.
 Return ONLY plain text — no JSON, no markdown headers.`;
 
-    const text = await callGemini(prompt, { message });
+    const text = await callGroq(prompt, { message });
 
     // Non-fatal DB save
     try {
