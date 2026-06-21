@@ -25,7 +25,6 @@ const app = express();
 app.set("trust proxy", 1);
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-// ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -54,7 +53,6 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-app.use(morgan("dev"));
 app.use(morgan("dev"));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -115,7 +113,7 @@ Reply helpfully and conversationally. Keep response under 200 words unless asked
 For product recommendations, prefer Indian brands available on Nykaa/Amazon.
 Return ONLY plain text — no JSON, no markdown headers.`;
 
-    const text = await callGemini(prompt, { message });
+    const text = await callGroq(prompt, { message });
 
     // Non-fatal DB save
     try {

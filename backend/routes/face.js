@@ -170,14 +170,14 @@ Return this exact JSON structure:
   "analysisSource": "${analysisSource}"
 }`;
 
-    // ── Call Gemini ──
-    console.log("🤖 Calling Gemini...");
-    const text = await callGemini(prompt, { faceShape, gender, age, skinScore, skinType });
-    const result = parseGeminiJSON(text);
-    console.log("✅ Gemini success, keys:", Object.keys(result).join(", "));
+    // ── Call Groq ──
+    console.log("🤖 Calling Groq...");
+    const text = await callGroq(prompt, { faceShape, gender, age, skinScore, skinType });
+    const result = parseGroqJSON(text);
+    console.log("✅ Groq success, keys:", Object.keys(result).join(", "));
 
     if (!result || typeof result !== "object") {
-      throw new Error("Gemini returned invalid structure");
+      throw new Error("Groq returned invalid structure");
     }
 
     // Override with accurate data
@@ -189,8 +189,8 @@ Return this exact JSON structure:
     result.rawSkinStatus = skinStatus;
     result.userProfile = { age, gender, height, weight, bmi, skinType, goal: userGoal };
     result.analyzedWith = mediapipeFaceShape
-      ? "MediaPipe + Face++ + Gemini AI"
-      : "Face++ + Gemini AI";
+      ? "MediaPipe + Face++ + Groq AI"
+      : "Face++ + Groq AI";
 
     if (result.detectedProblems && skinProblems.length > 0) {
       result.detectedProblems = result.detectedProblems.map((p, i) => ({

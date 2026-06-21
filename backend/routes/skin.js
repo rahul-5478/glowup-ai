@@ -1,10 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
-const { callGemini, parseGeminiJSON } = require("../config/groq"); // ✅ Gemini
+const { callGroq, parseGroqJSON } = require("../config/groq");
 const axios = require("axios");
 const FormData = require("form-data");
-
 
 async function scanWithFacePP(imageBase64) {
   try {
@@ -112,7 +111,7 @@ router.post("/analyze", protect, async (req, res) => {
     const skinScore = calcScore(faceData?.ss);
     console.log(`✅ Score: ${skinScore}, Face++ data: ${faceData ? "yes" : "no"}`);
 
-    // Step 2: Gemini AI
+    // Step 2: Groq AI
     let aiResult = null;
     try {
       const ss = faceData?.ss || {};
@@ -125,7 +124,7 @@ router.post("/analyze", protect, async (req, res) => {
       if (ss.blackheads > 20) problems.push(`blackheads ${ss.blackheads}%`);
       const problemStr = problems.length ? problems.join(", ") : "generally healthy skin";
 
-      console.log("🤖 Calling Gemini...");
+      console.log("🤖 Calling Groq...");
 
       const prompt = `You are a dermatologist AI. Patient scan: age ${faceData?.age || 25}, ${faceData?.gender || "unknown"}, skin problems: ${problemStr}, skin score: ${skinScore}/100.
 
@@ -149,9 +148,9 @@ Required JSON keys:
 - weeklyTreatments: array of 2 objects with {day, treatment, product, price, instructions}
 - treatmentPlan: object with week1, week2, week3, week4 each having {title, morning, night, avoid, expectedResult}`;
 
-      const text = await callGemini(prompt);
-      aiResult = parseGeminiJSON(text);
-      console.log("✅ Gemini success, keys:", Object.keys(aiResult).join(", "));
+      const text = await callGroq(prompt);
+      aiResult = parseGroqJSON(text);
+      console.log("✅ Groq success, keys:", Object.keys(aiResult).join(", "));
 
       // Validate — use fallback for missing parts
       if (!aiResult.productPlan || aiResult.productPlan.length === 0) {
@@ -165,8 +164,8 @@ Required JSON keys:
         console.log("⚠️ treatmentPlan missing, using fallback");
         aiResult.treatmentPlan = getFallback(faceData, skinScore).treatmentPlan;
       }
-    } catch (geminiErr) {
-      console.error("⚠️ Gemini failed, using fallback:", geminiErr.message);
+    } catch (groqErr) {
+      console.error("⚠️ Groq failed, using fallback:", groqErr.message);
       aiResult = getFallback(faceData, skinScore);
     }
 

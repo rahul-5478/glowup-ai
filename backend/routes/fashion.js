@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
-const { callGroq, parseGroqJSON } = require("../config/groq");;
+const { callGroq, parseGroqJSON } = require("../config/groq");
 const User = require("../models/User");
 
 router.post("/analyze", protect, async (req, res) => {
@@ -13,8 +13,8 @@ router.post("/analyze", protect, async (req, res) => {
 
     let result;
     try {
-      const text = await callGemini(prompt, { occasion, style, budget });
-      result = parseGeminiJSON(text);
+      const text = await callGroq(prompt, { occasion, style, budget });
+      result = parseGroqJSON(text);
       if (!result) throw new Error("Parse failed");
     } catch (e) {
       result = {

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
-const { callGemini, parseGeminiJSON } = require("../config/groq");
+const { callGroq, parseGroqJSON } = require("../config/groq");
 const User = require("../models/User");
 
 router.post("/score", protect, async (req, res) => {
@@ -46,8 +46,8 @@ Return ONLY JSON:
   "badges": ["badge1 if earned", "badge2 if earned"]
 }`;
 
-    const text = await callGemini(prompt, { skinScore, fitnessScore, fashionScore });
-    const insight = parseGeminiJSON(text);
+    const text = await callGroq(prompt, { skinScore, fitnessScore, fashionScore });
+    const insight = parseGroqJSON(text);
 
     res.json({ success: true, weekData: { ...weekData, ...insight } });
   } catch (err) {
