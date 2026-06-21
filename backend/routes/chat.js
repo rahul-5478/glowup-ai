@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
-const { callGemini } = require("../config/gemini");
+const { callGroq, parseGroqJSON } = require("../config/groq");
 const User = require("../models/User");
 
 // ─── POST /api/chat/message ───────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
-const { callGemini, parseGeminiJSON } = require("../config/gemini"); // ✅ Gemini
+const { callGemini, parseGeminiJSON } = require("../config/groq"); // ✅ Gemini
 const axios = require("axios");
 const FormData = require("form-data");
 

@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
       age: { type: Number, default: null },
       weight: { type: Number, default: null },
       height: { type: Number, default: null },
-      // ✅ enum hataya — koi bhi string save ho sakti hai
+      // enum hataya — koi bhi string save ho sakti hai
       gender: { type: String, default: "" },
       skinType: { type: String, default: "" },
       weightUnit: { type: String, default: "kg" },

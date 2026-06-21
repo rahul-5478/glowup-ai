@@ -17,7 +17,7 @@ const userRoutes    = require("./routes/user");
 const skinRoutes    = require("./routes/skin");
 const paymentRoutes = require("./routes/payment");
 
-const { callGemini }  = require("./config/gemini");
+const { callGroq }  = require("./config/groq");
 const { protect }     = require("./middleware/auth");
 const User            = require("./models/User");
 

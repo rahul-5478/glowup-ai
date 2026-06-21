@@ -7,7 +7,7 @@ const { protect } = require("../middleware/auth");
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-// ─── Register ────────────────────────────────────────────────
+// Register 
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
