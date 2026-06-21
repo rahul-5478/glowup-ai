@@ -299,9 +299,15 @@ const styles = {
 };
 
 // ─── BACKEND URL ──────────────────────────────────────────────────────────────
+// ✅ FIXED: This app uses Vite, not Create React App.
+// process.env.REACT_APP_* does NOT work in Vite — it's always undefined in the
+// browser bundle, which silently fell back to "http://localhost:5000" in
+// production and caused "Failed to fetch". Use import.meta.env.VITE_API_URL
+// instead, same as the rest of the app (GlowTracker.jsx, etc).
+// VITE_API_URL is expected to already include "/api" (e.g. ".../api"), so we
+// strip that suffix here since this file appends "/api/face/analyze" itself.
 const BACKEND_URL =
-  process.env.REACT_APP_BACKEND_URL ||
-  "http://localhost:5000";
+  (import.meta.env.VITE_API_URL || "https://glowup-ai-3.onrender.com/api").replace(/\/api\/?$/, "");
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function FaceAnalysis() {
@@ -409,7 +415,11 @@ export default function FaceAnalysis() {
     setError("");
 
     try {
-      const token = localStorage.getItem("token"); // adjust if you store it differently
+      // ✅ FIXED: was "token" — but the rest of the app (GlowTracker.jsx etc.)
+      // stores the auth token under "glowup_token". Mismatched key meant no
+      // Authorization header was ever sent, so even a reachable backend would
+      // 401 here. Using the same key as the rest of the app now.
+      const token = localStorage.getItem("glowup_token");
 
       const response = await fetch(`${BACKEND_URL}/api/face/analyze`, {
         method: "POST",
@@ -418,7 +428,7 @@ export default function FaceAnalysis() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          imageBase64, // ⚠️ backend route reads req.body.imageBase64, not "image"
+          imageBase64, // backend route reads req.body.imageBase64
         }),
       });
 
@@ -428,7 +438,7 @@ export default function FaceAnalysis() {
         throw new Error(data.error || data.detail || "Analysis failed");
       }
 
-      // ⚠️ backend sends { success: true, result: {...} } — not data.analysis
+      // backend sends { success: true, result: {...} }
       setResult(data.result);
       setActiveTab("problems");
       setMode("result");
